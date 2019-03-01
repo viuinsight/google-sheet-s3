@@ -79,8 +79,8 @@ function publish(event) {
   // upload to S3
   // https://github.com/viuinsight/google-apps-script-for-aws
   var props = PropertiesService.getDocumentProperties().getProperties();
-  S3.init(props.awsAccessKeyId, props.awsSecretKey);
-  S3.putObject(props.bucketName, [props.path, sheet.getId()].join("/"), objs, props.region);
+  AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
+  AWS.S3.putObject(props.bucketName, [props.path, sheet.getId()].join("/"), objs, props.region);
 }
 
 /**
