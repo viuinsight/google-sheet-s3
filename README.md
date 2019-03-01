@@ -80,7 +80,7 @@ That's it! Any time you make a change to the spreadsheet, the changes will be re
 ## Development setup instructions
 
 1. Create a new Google Apps Script with files whose names and content matches the ones in this repo (minus this readme).
-2. Add the [Amazon S3 API Binding](https://engetc.com/projects/amazon-s3-api-binding-for-google-apps-script/).
+2. Add the [Amazon S3 API Binding](https://github.com/viuinsight/google-apps-script-for-aws) as `AWS`.
 3. In the menu bar, click Publish > Test as add-on...
 4. Select a version, for "Installation Config", choose "Installed and enabled", and select a document (must be a spreadsheet). Save.
 
