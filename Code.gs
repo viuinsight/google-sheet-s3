@@ -77,10 +77,10 @@ function publish(event) {
     });
 
   // upload to S3
-  // https://engetc.com/projects/amazon-s3-api-binding-for-google-apps-script/
+  // https://github.com/viuinsight/google-apps-script-for-aws
   var props = PropertiesService.getDocumentProperties().getProperties();
-  var s3 = S3.getInstance(props.awsAccessKeyId, props.awsSecretKey);
-  s3.putObject(props.bucketName, [props.path, sheet.getId()].join('/'), objs);
+  S3.init(props.awsAccessKeyId, props.awsSecretKey);
+  S3.putObject(props.bucketName, [props.path, sheet.getId()].join("/"), objs, props.region);
 }
 
 /**
@@ -93,6 +93,7 @@ function showConfig() {
   var template = HtmlService.createTemplateFromFile("config");
   template.sheetId = sheet.getId();
   template.bucketName = props.bucketName || "";
+  template.region = props.region || "";
   template.path = props.path || "";
   template.awsAccessKeyId = props.awsAccessKeyId || "";
   template.awsSecretKey = props.awsSecretKey || "";
@@ -108,6 +109,7 @@ function updateConfig(form) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   PropertiesService.getDocumentProperties().setProperties({
     bucketName: form.bucketName,
+    region: form.region,
     path: form.path,
     awsAccessKeyId: form.awsAccessKeyId,
     awsSecretKey: form.awsSecretKey
@@ -143,5 +145,6 @@ function updateConfig(form) {
  */
 function hasRequiredProps() {
   var props = PropertiesService.getDocumentProperties().getProperties();
-  return props.bucketName && props.awsAccessKeyId && props.awsSecretKey;
+  return props.bucketName && props.region && props.awsAccessKeyId
+    && props.awsSecretKey;
 }
