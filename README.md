@@ -1,12 +1,12 @@
-# <img src="https://github.com/liddiard/google-sheet-s3/blob/master/img/icon.png?raw=true" alt="logo" width="64px" /> google-sheet-s3
+# <img src="https://github.com/viuinsight/google-sheet-s3/blob/master/img/icon.png?raw=true" alt="logo" width="64px" /> google-sheet-s3
 
 [Google Apps Script](https://developers.google.com/apps-script/) that publishes a Google Sheet to Amazon S3 as a JSON file. Auto-updates on edit & maintains data types. Creates an array of objects keyed by column header.
 
-Turn a spreadsheet like this: 
+Turn a spreadsheet like this:
 
 ![spreadsheet](http://i.imgur.com/9k7tY91.png)
 
-Into an auto-updating JSON file like this: 
+Into an auto-updating JSON file like this:
 
 ![JSON object](http://i.imgur.com/FahoMx4.png)
 
@@ -14,7 +14,7 @@ Get the add-on [here on the Chrome Web Store](https://chrome.google.com/webstore
 
 ## Why?
 
-### Use case 
+### Use case
 
 "I want to display simple, structured, spreadsheet-like, publicly accessible data on a website (possibly with thousands of simultaneous visitors) that is easily updatable (possibly by multiple people at once) without the overhead and time of coding, deploying, and maintaining a full-blown web application."
 
@@ -39,9 +39,9 @@ Staff directory list, restaurant menu items listing, sports team standings page,
     - [Created security credentials](https://console.aws.amazon.com/iam/home?nc2=h_m_sc#users) that have write permissions to the bucket.
     - Added a CORS policy that allows GET requests from whatever origin (domain name) you want to access the data from. The default policy allows access from any origin. To enable, go to your S3 Management Console, right-click your bucket name, click Properties > Permissions > Add CORS Configuration > Save (modal dialog) > Save (again) (blue button in sidebar)
     - Added a bucket policy that enables public viewing of the published JSON. To enable, go to your S3 Management Console, right-click your bucket name, click Properties > Permissions > Add bucket policy > [Paste the text below to allow everyone public view access] > Save (modal dialog) > Save (again) (blue button in sidebar)
-    
+
 #### Bucket policy for public read-only access
-    
+
 ```json
 {
 	"Version": "2012-10-17",
