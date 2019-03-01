@@ -1,20 +1,33 @@
+/**
+ * Adds "Publish to S3" menu to Sheets UI.
+ */
 function createMenu() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu('Publish to S3')
-  .addItem('Configure...', 'showConfig')
-  .addToUi();
+  ui.createMenu("Publish to S3")
+    .addItem("Configure...", "showConfig")
+    .addToUi();
 }
 
-function onInstall() { 
+/**
+ * Adds menu on install.
+ */
+function onInstall() {
   createMenu();
 }
 
-function onOpen() { 
+/**
+ * Adds menu on open.
+ */
+function onOpen() {
   createMenu();
 }
 
-// publish updated JSON to S3 if changes were made to the first sheet
-// event object passed if called from trigger
+/**
+ * Publish updated JSON to S3 if changes were made to the first sheet event
+ * object passed if called from trigger.
+ *
+ * @param {Object} event - event that triggered the function call
+ */
 function publish(event) {
   // do nothing if required configuration settings are not present
   if (!hasRequiredProps()) {
@@ -30,39 +43,38 @@ function publish(event) {
 
   // get cell values from the range that contains data (2D array)
   var rows = sheet
-  .getDataRange()
-  .getValues();
+    .getDataRange()
+    .getValues();
 
-  // filter out empty rows
-  rows = rows.filter(function(row){
-    return row
-    .some(function(value){
-      return typeof value !== 'string' || value.length;
+  // filter out empty rows, then exclude columns that don't have a header (i.e.
+  // text in row 1)
+  rows = rows
+    .filter(function(row) {
+      return row.some(function(value) {
+        return typeof value !== "string" || value.length;
+      });
+    })
+    .map(function(row) {
+      return row.filter(function(value, index) {
+        return rows[0][index].length;
+      });
     });
-  })
-  // filter out columns that don't have a header (i.e. text in row 1)
-  .map(function(row){
-    return row
-    .filter(function(value, index){
-      return rows[0][index].length;
-    });
-  });
 
   // create an array of objects keyed by header
   var objs = rows
-  .slice(1)
-  .map(function(row){
-    var obj = {};
-    row.forEach(function(value, index){
-      var prop = rows[0][index];
-      // represent blank cell values as `null`
-      // blank cells always appear as an empty string regardless of the data
-      // type of other values in the column. neutralizing everything to `null`
-      // lets us avoid mixing empty strings with other data types for a prop.
-      obj[prop] = (typeof value === 'string' && !value.length) ? null : value;
+    .slice(1)
+    .map(function(row) {
+      var obj = {};
+      row.forEach(function(value, index) {
+        var prop = rows[0][index];
+        // represent blank cell values as `null`
+        // blank cells always appear as an empty string regardless of the data
+        // type of other values in the column. neutralizing everything to `null`
+        // lets us avoid mixing empty strings with other data types for a prop.
+        obj[prop] = (typeof value === "string" && !value.length) ? null : value;
+      });
+      return obj;
     });
-    return obj;
-  });
 
   // upload to S3
   // https://engetc.com/projects/amazon-s3-api-binding-for-google-apps-script/
@@ -71,21 +83,27 @@ function publish(event) {
   s3.putObject(props.bucketName, [props.path, sheet.getId()].join('/'), objs);
 }
 
-// show the configuration modal dialog UI
+/**
+ * Displays the configuration modal dialog.
+ */
 function showConfig() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var ui = SpreadsheetApp.getUi();
   var props = PropertiesService.getDocumentProperties().getProperties();
-  var template = HtmlService.createTemplateFromFile('config');
+  var template = HtmlService.createTemplateFromFile("config");
   template.sheetId = sheet.getId();
-  template.bucketName = props.bucketName || '';
-  template.path = props.path || '';
-  template.awsAccessKeyId = props.awsAccessKeyId || '';
-  template.awsSecretKey = props.awsSecretKey || '';
-  ui.showModalDialog(template.evaluate(), 'Amazon S3 publish configuration');
+  template.bucketName = props.bucketName || "";
+  template.path = props.path || "";
+  template.awsAccessKeyId = props.awsAccessKeyId || "";
+  template.awsSecretKey = props.awsSecretKey || "";
+  ui.showModalDialog(template.evaluate(), "Amazon S3 publish configuration");
 }
 
-// update document configuration with values from form UI
+/**
+ * Submit action for the configuration modal dialog.
+ *
+ * @param {form} form - Web form that triggered the submit.
+ */
 function updateConfig(form) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   PropertiesService.getDocumentProperties().setProperties({
@@ -94,29 +112,35 @@ function updateConfig(form) {
     awsAccessKeyId: form.awsAccessKeyId,
     awsSecretKey: form.awsSecretKey
   });
+
   var message;
   if (hasRequiredProps()) {
-    message = 'Published spreadsheet will be accessible at: \nhttps://' + form.bucketName + '.s3.amazonaws.com/' + form.path + '/' + sheet.getId();
+    message = "Published spreadsheet will be accessible at: \nhttps://"
+      + form.bucketName + ".s3.amazonaws.com/" + form.path + "/"
+      + sheet.getId();
     publish();
-    // Create an onChange trigger programatically instead of manually because 
+    // Create an onChange trigger programatically instead of manually because
     // manual triggers disappear for no reason. See:
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=4854
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=5831
-    var sheet = SpreadsheetApp.getActive();
     ScriptApp.newTrigger("publish")
              .forSpreadsheet(sheet)
              .onChange()
              .create();
-  }
-  else {
-    message = 'You will need to fill out all configuration options for your spreadsheet to be published to S3.';
+  } else {
+    message = "You will need to fill out all configuration options for your "
+      + "spreadsheet to be published to S3.";
   }
   var ui = SpreadsheetApp.getUi();
-  ui.alert('✓ Configuration updated', message, ui.ButtonSet.OK);
+  ui.alert("✓ Configuration updated", message, ui.ButtonSet.OK);
 }
 
-// checks if document has the required configuration settings to publish to S3
-// does not check if the config is valid
+/**
+ * Checks if the Sheet has the required configuration settings to publish to S3.
+ * Does not validate the values, only ensures they are not empty.
+ *
+ * @return {boolean} true if all required properties are set, false otherwise.
+ */
 function hasRequiredProps() {
   var props = PropertiesService.getDocumentProperties().getProperties();
   return props.bucketName && props.awsAccessKeyId && props.awsSecretKey;
