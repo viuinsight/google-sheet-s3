@@ -97,7 +97,7 @@ function showConfig() {
   template.path = props.path || "";
   template.awsAccessKeyId = props.awsAccessKeyId || "";
   template.awsSecretKey = props.awsSecretKey || "";
-  ui.showModalDialog(template.evaluate(), "Amazon S3 publish configuration");
+  ui.showModalDialog(template.evaluate(), "Amazon S3 Publish Configuration");
 }
 
 /**
