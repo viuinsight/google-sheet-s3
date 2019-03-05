@@ -5,6 +5,7 @@ function createMenu() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("Publish to S3")
     .addItem("Configure...", "showConfig")
+    // .addItem("Publish Now", "publish") // useful when testing
     .addToUi();
 }
 
