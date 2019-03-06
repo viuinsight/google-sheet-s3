@@ -1,13 +1,12 @@
 /**
- * Adds "Publish to S3" menu to Sheets UI.
+ * Adds add-on menu to Sheets UI.
  */
-function createMenu() {
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu("Publish to S3")
-    .addItem("Configure...", "showConfig")
-    // .addItem("Publish Now", "publish") // useful when testing
-    .addToUi();
-}
+ function createMenu() {
+   SpreadsheetApp.getUi().createAddonMenu()
+     .addItem("Configure...", "showConfig")
+     .addItem("Publish Now", "publish")
+     .addToUi();
+ }
 
 /**
  * Adds menu on install.
