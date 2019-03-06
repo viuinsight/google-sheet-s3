@@ -1,12 +1,12 @@
-# <img src="https://github.com/liddiard/google-sheet-s3/blob/master/img/icon.png?raw=true" alt="logo" width="64px" /> google-sheet-s3
+# <img src="https://github.com/viuinsight/google-sheets-to-s3/blob/master/img/icon.png?raw=true" alt="logo" width="64px" /> google-sheet-s3
 
 [Google Apps Script](https://developers.google.com/apps-script/) that publishes a Google Sheet to Amazon S3 as a JSON file. Auto-updates on edit & maintains data types. Creates an array of objects keyed by column header.
 
-Turn a spreadsheet like this: 
+Turn a spreadsheet like this:
 
 ![spreadsheet](http://i.imgur.com/9k7tY91.png)
 
-Into an auto-updating JSON file like this: 
+Into an auto-updating JSON file like this:
 
 ![JSON object](http://i.imgur.com/FahoMx4.png)
 
@@ -14,13 +14,13 @@ Get the add-on [here on the Chrome Web Store](https://chrome.google.com/webstore
 
 ## Why?
 
-### Use case 
+### Use case
 
-"I want to display simple, structured, spreadsheet-like, publicly accessible data on a website (possibly with thousands of simultaneous visitors) that is easily updatable (possibly by multiple people at once) without the overhead and time of coding, deploying, and maintaining a full-blown web application."
+"I want to manage simple, structured, data in an easily updatable way (possibly by multiple people at once) that can be published for use by other systems without the overhead and time of coding, deploying, and maintaining a full-blown web application."
 
 ### Examples
 
-Staff directory list, restaurant menu items listing, sports team standings page, [live blog](https://github.com/liddiard/react-live-blog/).
+Staff directory list, restaurant menu items listing, sports team standings page, etc.
 
 ## Why not [alternative]?
 
@@ -35,27 +35,16 @@ Staff directory list, restaurant menu items listing, sports team standings page,
 
 ### Prerequisites
 
-- An Amazon S3 bucket for which you have:
-    - [Created security credentials](https://console.aws.amazon.com/iam/home?nc2=h_m_sc#users) that have write permissions to the bucket.
-    - Added a CORS policy that allows GET requests from whatever origin (domain name) you want to access the data from. The default policy allows access from any origin. To enable, go to your S3 Management Console, right-click your bucket name, click Properties > Permissions > Add CORS Configuration > Save (modal dialog) > Save (again) (blue button in sidebar)
-    - Added a bucket policy that enables public viewing of the published JSON. To enable, go to your S3 Management Console, right-click your bucket name, click Properties > Permissions > Add bucket policy > [Paste the text below to allow everyone public view access] > Save (modal dialog) > Save (again) (blue button in sidebar)
-    
-#### Bucket policy for public read-only access
-    
-```json
-{
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Sid": "AddPerm",
-			"Effect": "Allow",
-			"Principal": "*",
-			"Action": "s3:GetObject",
-			"Resource": "arn:aws:s3:::PUT-YOUR-BUCKET-NAME-HERE/*"
-		}
-	]
-}
-```
+An Amazon S3 bucket for which you have [created security credentials](https://console.aws.amazon.com/iam/home?nc2=h_m_sc#users) that have write permissions to the bucket.
+
+### Optional
+
+To make the published JSON publicly accessible, the following must be applied to the S3 bucket:
+
+    - A CORS policy that allows GET requests from whatever origin (domain name) you want to access the data from. The default policy allows access from any origin.
+    - A bucket policy that enables public viewing of the published JSON.
+
+See Amazon S3 documentation for how to do this.
 
 ### Instructions
 
@@ -66,7 +55,7 @@ Staff directory list, restaurant menu items listing, sports team standings page,
 5. Fill in the S3 bucket name, path within the bucket (leave blank if none), and AWS credentials that allow write access to the bucket.
 6. Click "Save". The S3 URL of your JSON-ified spreadsheet will be shown.
 
-**Did I miss something in these instructions? Not working as expected? Feel free to [file an issue](https://github.com/liddiard/google-sheet-s3/issues).**
+**Did I miss something in these instructions? Not working as expected? Feel free to [file an issue](https://github.com/viuinsight/google-sheets-to-s3/issues).**
 
 That's it! Any time you make a change to the spreadsheet, the changes will be re-published to the JSON file. The JSON file's filename is taken from the spreadsheet ID, so the spreadsheet can be renamed without breaking the URL.
 
@@ -79,14 +68,9 @@ That's it! Any time you make a change to the spreadsheet, the changes will be re
 
 ## Development setup instructions
 
-1. Create a new Google Apps Script with files whose names and content matches the ones in this repo (minus this readme).
-2. Add the [Amazon S3 API Binding](https://engetc.com/projects/amazon-s3-api-binding-for-google-apps-script/).
+1. Create a new Google Apps Script with files whose names and content matches the ones in this repo (minus README and LICENSE).
+2. Add the [Amazon S3 API Binding](https://github.com/viuinsight/google-apps-script-for-aws) as `AWS`.
 3. In the menu bar, click Publish > Test as add-on...
 4. Select a version, for "Installation Config", choose "Installed and enabled", and select a document (must be a spreadsheet). Save.
 
-### Developement links for version published to Chrome Web Store
-
-These links are not publicly accessible – please do not request access. They're only for my personal reference to develop the script. If you'd like to develop on this script yourself, follow the instructions above to set up a development environment.
-
-- [Sheet](https://docs.google.com/spreadsheets/d/19loh8WQudFyClZORX_nNzDvI4iVewVy9v70zdog83Uc/edit#gid=0)
-- [Apps Script](https://script.google.com/macros/d/MIjU_ktgghpXlevjc5UKzGX33-3kBXtAK/edit?uiv=2&mid=ACjPJvGUsuxrK89WuB25at1Q6PF5qzf82zlLc8iciAjnZ97ozdHkwB-uJrS6tcVQDGi9Ydwk2LipQn5ut_8zT_iLLcYDq8aDnysmrjWpMo8PSk42JGUu0jLxp6TkSxMn8HGyQIAruhbBQw)
+**Note:** While testing, the event registration part may not work. If so, you can uncomment the additional menu item _Publish Now_ to trigger the publish manually.
