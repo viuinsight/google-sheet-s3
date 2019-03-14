@@ -88,12 +88,17 @@ function publish(event) {
       return obj;
     });
 
+  // wrap array in object
+  var content = {
+    data: objs
+  }
+
   // upload to S3
   // https://github.com/viuinsight/google-apps-script-for-aws
   var props = PropertiesService.getDocumentProperties().getProperties();
   try {
     AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
-    AWS.S3.putObject(props.bucketName, [props.path, sheetId].join("/"), objs, props.region);
+    AWS.S3.putObject(props.bucketName, [props.path, sheetId].join("/"), content, props.region);
   } catch (e) {
     Logger.log("Did not publish. Spreadsheet [" + sheetId
       + "] generated following AWS error.\n" + e.toString());
