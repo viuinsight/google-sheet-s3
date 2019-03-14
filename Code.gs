@@ -1,4 +1,8 @@
 /**
+ * @OnlyCurrentDoc
+ */
+
+/**
  * Adds add-on menu to Sheets UI.
  */
  function createMenu() {
