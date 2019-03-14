@@ -35,15 +35,21 @@ function onOpen() {
  * @param {Object} event - event that triggered the function call
  */
 function publish(event) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetId = sheet.getId();
+
   // do nothing if required configuration settings are not present
   if (!hasRequiredProps()) {
+    Logger.log("Did not publish. Spreadsheet [" + sheetId
+      + "] does not have required props set");
     return;
   }
 
-  // do nothing if the edited sheet is not the first one
-  var sheet = SpreadsheetApp.getActiveSpreadsheet();
-  // sheets are indexed from 1 instead of 0
+  // do nothing if the edited sheet is not the first one -- sheets are indexed
+  // from 1 instead of 0
   if (sheet.getActiveSheet().getIndex() > 1) {
+    Logger.log("Did not publish. Spreadsheet [" + sheetId
+      + "] first sheet was not modified.");
     return;
   }
 
@@ -85,8 +91,13 @@ function publish(event) {
   // upload to S3
   // https://github.com/viuinsight/google-apps-script-for-aws
   var props = PropertiesService.getDocumentProperties().getProperties();
-  AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
-  AWS.S3.putObject(props.bucketName, [props.path, sheet.getId()].join("/"), objs, props.region);
+  try {
+    AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
+    AWS.S3.putObject(props.bucketName, [props.path, sheetId].join("/"), objs, props.region);
+  } catch (e) {
+    Logger.log("Did not publish. Spreadsheet [" + sheetId
+      + "] generated following AWS error.\n" + e.toString());
+  }
 }
 
 /**
