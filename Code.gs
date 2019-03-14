@@ -5,12 +5,14 @@
 /**
  * Adds add-on menu to Sheets UI.
  */
- function createMenu() {
-   SpreadsheetApp.getUi().createAddonMenu()
-     .addItem("Configure...", "showConfig")
-     .addItem("Publish Now", "publish")
-     .addToUi();
- }
+function createMenu() {
+  SpreadsheetApp.getUi()
+    .createAddonMenu() // when used as an Add-on
+    // .createMenu("S3 JSON Publisher") // when directly added to Sheet
+    .addItem("Configure...", "showConfig")
+    .addItem("Publish Now", "publish")
+    .addToUi();
+}
 
 /**
  * Adds menu on install.
