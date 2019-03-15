@@ -99,6 +99,7 @@ function publish(event) {
   try {
     AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
     AWS.S3.putObject(props.bucketName, [props.path, sheetId].join("/"), content, props.region);
+    Logger.log("Published Spreadsheet [" + sheetId + "]");
   } catch (e) {
     Logger.log("Did not publish. Spreadsheet [" + sheetId
       + "] generated following AWS error.\n" + e.toString());
@@ -129,6 +130,7 @@ function showConfig() {
  */
 function updateConfig(form) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetId = sheet.getId();
   PropertiesService.getDocumentProperties().setProperties({
     bucketName: form.bucketName,
     region: form.region,
@@ -137,8 +139,11 @@ function updateConfig(form) {
     awsSecretKey: form.awsSecretKey
   });
 
+  // Assume update will fail
+  var title = "Configuration failed to update";
   var message;
   if (hasRequiredProps()) {
+    title = "✓ Configuration updated";
     message = "Published spreadsheet will be accessible at: \nhttps://"
       + form.bucketName + ".s3.amazonaws.com/" + form.path + "/"
       + sheet.getId();
@@ -147,16 +152,22 @@ function updateConfig(form) {
     // manual triggers disappear for no reason. See:
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=4854
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=5831
-    ScriptApp.newTrigger("publish")
-             .forSpreadsheet(sheet)
-             .onChange()
-             .create();
+    try {
+      ScriptApp.newTrigger("publish")
+               .forSpreadsheet(sheet)
+               .onChange()
+               .create();
+    } catch (e) {
+      message = "Could not register event listener.\n" + e.toString();
+      Logger.log("Could not register onChange event for Spreadsheet [" + sheetId
+        + "]\n" + e.toString());
+    }
   } else {
     message = "You will need to fill out all configuration options for your "
       + "spreadsheet to be published to S3.";
   }
   var ui = SpreadsheetApp.getUi();
-  ui.alert("✓ Configuration updated", message, ui.ButtonSet.OK);
+  ui.alert(title, message, ui.ButtonSet.OK);
 }
 
 /**
