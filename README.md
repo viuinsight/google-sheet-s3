@@ -1,4 +1,4 @@
-# <img src="https://github.com/viuinsight/google-sheets-to-s3/blob/master/img/icon.png?raw=true" alt="logo" width="64px" /> google-sheet-s3
+# <img src="https://github.com/viuinsight/google-sheets-to-s3/blob/master/img/icon.png?raw=true" alt="logo" width="64px" /> google-sheets-to-s3
 
 [Google Apps Script](https://developers.google.com/apps-script/) that publishes a Google Sheet to Amazon S3 as a JSON file. Auto-updates on edit & maintains data types. Creates an array of objects keyed by column header.
 
@@ -10,7 +10,7 @@ Into an auto-updating JSON file like this:
 
 ![JSON object](http://i.imgur.com/FahoMx4.png)
 
-Get the add-on [here on the Chrome Web Store](https://chrome.google.com/webstore/detail/publish-sheet-to-s3/dnadifnnmjfmcedgifdienlmloeiongn).
+Get the add-on [here on the Chrome Web Store](https://chrome.google.com/webstore/detail/s3-json-publisher/mdflfaifaifehmcgmjkbdcdgngoohlld).
 
 ## Why?
 
@@ -50,10 +50,10 @@ See Amazon S3 documentation for how to do this.
 
 1. Create or open an existing Google Sheet.
 2. Format the sheet so that the first row contains the column headers you want your JSON objects to have as properties. Example: ![Example](http://i.imgur.com/kTd3noR.png)
-3. Install and enable [the add-on](https://chrome.google.com/webstore/detail/publish-sheet-to-s3/dnadifnnmjfmcedgifdienlmloeiongn).
-4. In the spreadsheet's menu, go to Add-ons > Publish to S3 > Configure...
+3. Install and enable [the add-on](https://chrome.google.com/webstore/detail/s3-json-publisher/mdflfaifaifehmcgmjkbdcdgngoohlld).
+4. In the spreadsheet's Add-ons menu, click "Configure..."
 5. Fill in the S3 bucket name, path within the bucket (leave blank if none), and AWS credentials that allow write access to the bucket.
-6. Click "Save". The S3 URL of your JSON-ified spreadsheet will be shown.
+6. Click "Submit". The S3 URL of your JSON-ified spreadsheet will be shown.
 
 **Did I miss something in these instructions? Not working as expected? Feel free to [file an issue](https://github.com/viuinsight/google-sheets-to-s3/issues).**
 

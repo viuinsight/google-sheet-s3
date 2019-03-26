@@ -1,12 +1,18 @@
 /**
+ * @OnlyCurrentDoc
+ */
+
+/**
  * Adds add-on menu to Sheets UI.
  */
- function createMenu() {
-   SpreadsheetApp.getUi().createAddonMenu()
-     .addItem("Configure...", "showConfig")
-     .addItem("Publish Now", "publish")
-     .addToUi();
- }
+function createMenu() {
+  SpreadsheetApp.getUi()
+    .createAddonMenu() // when used as an Add-on
+    // .createMenu("S3 JSON Publisher") // when directly added to Sheet
+    .addItem("Configure...", "showConfig")
+    .addItem("Publish Now", "publish")
+    .addToUi();
+}
 
 /**
  * Adds menu on install.
@@ -29,15 +35,21 @@ function onOpen() {
  * @param {Object} event - event that triggered the function call
  */
 function publish(event) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetId = sheet.getId();
+
   // do nothing if required configuration settings are not present
   if (!hasRequiredProps()) {
+    Logger.log("Did not publish. Spreadsheet [" + sheetId
+      + "] does not have required props set");
     return;
   }
 
-  // do nothing if the edited sheet is not the first one
-  var sheet = SpreadsheetApp.getActiveSpreadsheet();
-  // sheets are indexed from 1 instead of 0
+  // do nothing if the edited sheet is not the first one -- sheets are indexed
+  // from 1 instead of 0
   if (sheet.getActiveSheet().getIndex() > 1) {
+    Logger.log("Did not publish. Spreadsheet [" + sheetId
+      + "] first sheet was not modified.");
     return;
   }
 
@@ -76,11 +88,22 @@ function publish(event) {
       return obj;
     });
 
+  // wrap array in object
+  var content = {
+    data: objs
+  }
+
   // upload to S3
   // https://github.com/viuinsight/google-apps-script-for-aws
   var props = PropertiesService.getDocumentProperties().getProperties();
-  AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
-  AWS.S3.putObject(props.bucketName, [props.path, sheet.getId()].join("/"), objs, props.region);
+  try {
+    AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
+    AWS.S3.putObject(props.bucketName, [props.path, sheetId].join("/"), content, props.region);
+    Logger.log("Published Spreadsheet [" + sheetId + "]");
+  } catch (e) {
+    Logger.log("Did not publish. Spreadsheet [" + sheetId
+      + "] generated following AWS error.\n" + e.toString());
+  }
 }
 
 /**
@@ -107,6 +130,7 @@ function showConfig() {
  */
 function updateConfig(form) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetId = sheet.getId();
   PropertiesService.getDocumentProperties().setProperties({
     bucketName: form.bucketName,
     region: form.region,
@@ -115,8 +139,11 @@ function updateConfig(form) {
     awsSecretKey: form.awsSecretKey
   });
 
+  // Assume update will fail
+  var title = "Configuration failed to update";
   var message;
   if (hasRequiredProps()) {
+    title = "✓ Configuration updated";
     message = "Published spreadsheet will be accessible at: \nhttps://"
       + form.bucketName + ".s3.amazonaws.com/" + form.path + "/"
       + sheet.getId();
@@ -125,16 +152,36 @@ function updateConfig(form) {
     // manual triggers disappear for no reason. See:
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=4854
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=5831
-    ScriptApp.newTrigger("publish")
-             .forSpreadsheet(sheet)
-             .onChange()
-             .create();
+    // But only if such a trigger does not exist.
+    try {
+      var fnName = "publish";
+      var triggers = ScriptApp.getProjectTriggers();
+      var triggerExists = false;
+
+      for (var i = 0; i < triggers.length; i++) {
+        if (triggers[i].getHandlerFunction() === fnName) {
+          triggerExists = true;
+          break;
+        }
+      }
+
+      if (!triggerExists) {
+        ScriptApp.newTrigger(functionName)
+          .forSpreadsheet(sheet)
+          .onChange()
+          .create();
+      }
+    } catch (e) {
+      message = "Could not register event listener.\n" + e.toString();
+      Logger.log("Could not register onChange event for Spreadsheet [" + sheetId
+        + "]\n" + e.toString());
+    }
   } else {
     message = "You will need to fill out all configuration options for your "
       + "spreadsheet to be published to S3.";
   }
   var ui = SpreadsheetApp.getUi();
-  ui.alert("✓ Configuration updated", message, ui.ButtonSet.OK);
+  ui.alert(title, message, ui.ButtonSet.OK);
 }
 
 /**
