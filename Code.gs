@@ -152,11 +152,25 @@ function updateConfig(form) {
     // manual triggers disappear for no reason. See:
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=4854
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=5831
+    // But only if such a trigger does not exist.
     try {
-      ScriptApp.newTrigger("publish")
-               .forSpreadsheet(sheet)
-               .onChange()
-               .create();
+      var fnName = "publish";
+      var triggers = ScriptApp.getProjectTriggers();
+      var triggerExists = false;
+
+      for (var i = 0; i < triggers.length; i++) {
+        if (triggers[i].getHandlerFunction() === fnName) {
+          triggerExists = true;
+          break;
+        }
+      }
+
+      if (!triggerExists) {
+        ScriptApp.newTrigger(functionName)
+          .forSpreadsheet(sheet)
+          .onChange()
+          .create();
+      }
     } catch (e) {
       message = "Could not register event listener.\n" + e.toString();
       Logger.log("Could not register onChange event for Spreadsheet [" + sheetId
