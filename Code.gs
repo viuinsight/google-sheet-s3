@@ -166,7 +166,7 @@ function updateConfig(form) {
       }
 
       if (!triggerExists) {
-        ScriptApp.newTrigger(functionName)
+        ScriptApp.newTrigger(fnName)
           .forSpreadsheet(sheet)
           .onChange()
           .create();
