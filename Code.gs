@@ -97,9 +97,12 @@ function publish(event) {
   // https://github.com/viuinsight/google-apps-script-for-aws
   var props = PropertiesService.getDocumentProperties().getProperties();
   try {
+    // build object key based on whether changes should be tracked or not
     var objectKey = (props.path ? props.path + "/" : "") + sheetId
-      + Utilities.formatDate(new Date(), "GMT",
-          "-yyyy-MM-dd'T'HH-mm-ss-SSS.'json'");
+      + (props.trackChanges
+          ? Utilities.formatDate(new Date(), "GMT", "-yyyy-MM-dd'T'HH-mm-ss-SSS")
+          : "")
+      + ".json";
     AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
     AWS.S3.putObject(props.bucketName, objectKey, content, props.region);
     Logger.log("Published Spreadsheet to [" + objectKey + "]");
@@ -150,8 +153,8 @@ function updateConfig(form) {
   if (hasRequiredProps()) {
     title = "✓ Configuration updated";
     message = "Published spreadsheet will be accessible at: \nhttps://"
-      + form.bucketName + ".s3.amazonaws.com/" + form.path + "/"
-      + sheet.getId() + "-<yyyy-MM-dd>T<HH-mm-ss-SSS>.json";
+      + form.bucketName + ".s3.amazonaws.com/" + form.path + "/" + sheet.getId()
+      + (form.trackChanges ? "-<yyyy-MM-dd>T<HH-mm-ss-SSS>" : "") + ".json";
     publish();
     // Create an onChange trigger programatically instead of manually because
     // manual triggers disappear for no reason. See:
