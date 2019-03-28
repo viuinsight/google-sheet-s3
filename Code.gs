@@ -123,6 +123,7 @@ function showConfig() {
   template.path = props.path || "";
   template.awsAccessKeyId = props.awsAccessKeyId || "";
   template.awsSecretKey = props.awsSecretKey || "";
+  template.trackChanges = props.trackChanges || "";
   ui.showModalDialog(template.evaluate(), "Amazon S3 Publish Configuration");
 }
 
@@ -139,7 +140,8 @@ function updateConfig(form) {
     region: form.region,
     path: form.path,
     awsAccessKeyId: form.awsAccessKeyId,
-    awsSecretKey: form.awsSecretKey
+    awsSecretKey: form.awsSecretKey,
+    trackChanges: form.trackChanges
   });
 
   // Assume update will fail
