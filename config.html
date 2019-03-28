@@ -4,7 +4,6 @@
   <base target="_top">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -47,6 +46,11 @@
             </div>
           </div>
 
+          <div class="input-field col s12 track-changes-field" data-initial-value="<?!= updatedAt ?>">
+            <select id="updated-at-column" name="updatedAt"></select>
+            <label>Column containing when row was last updated at</label>
+          </div>
+
           <div class="input-field col s12">
             <div class="action-buttons">
               <button class="btn waves-effect waves-light" type="submit" name="action">
@@ -58,6 +62,8 @@
       </form>
     </div>
   </div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script>
     function handleSubmit() {
       var form = document.querySelector('form');
@@ -66,6 +72,45 @@
       submitButton.innerHTML = 'Saving...';
       google.script.run.updateConfig(form);
     }
+
+    function handleToggle() {
+      $('.track-changes-field').toggle($(this).is(':checked'));
+    }
+
+    function columnToLetter(column) {
+      var tmp = 0;
+      var col = column;
+      var letter = '';
+      while (col > 0) {
+        tmp = (col - 1) % 26;
+        letter = String.fromCharCode(tmp + 65) + letter;
+        col = (col - tmp - 1) / 26;
+      }
+      return letter;
+    }
+
+    function buildColumnSelect(headers) {
+      var select = $('#updated-at-column');
+      var selectedIndex = select.parent().attr('data-initial-value');
+
+      select.append(
+        '<option value="" disabled'
+        + (selectedIndex ? '' : ' selected="selected"')
+        + '>Select column</option>'
+      );
+      for (var i = 1; i <= headers.length; i++) {
+        select.append(
+          '<option value="' + i + '"' + (i == selectedIndex ? ' selected="selected"' : '')
+          + '>' + 'Column ' + columnToLetter(i) + ': ' + headers[i-1] + '</option>'
+        );
+      }
+      $('select').formSelect();
+    }
+
+    $(function() {
+      $('#track-changes').change(handleToggle).change();
+      google.script.run.withSuccessHandler(buildColumnSelect).getPopulatedColumnHeaders();
+    });
   </script>
 </body>
 </html>

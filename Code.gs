@@ -29,6 +29,16 @@ function onOpen() {
 }
 
 /**
+ * Returns an array containing the values from the top row of the data sheet.
+ *
+ * @return {string[]} array of column headers
+ */
+function getPopulatedColumnHeaders() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+}
+
+/**
  * Publish updated JSON to S3 if changes were made to the first sheet event
  * object passed if called from trigger.
  *
@@ -127,6 +137,7 @@ function showConfig() {
   template.awsAccessKeyId = props.awsAccessKeyId || "";
   template.awsSecretKey = props.awsSecretKey || "";
   template.trackChanges = props.trackChanges || "";
+  template.updatedAt = props.updatedAt || "";
   ui.showModalDialog(template.evaluate(), "Amazon S3 Publish Configuration");
 }
 
@@ -144,7 +155,8 @@ function updateConfig(form) {
     path: form.path,
     awsAccessKeyId: form.awsAccessKeyId,
     awsSecretKey: form.awsSecretKey,
-    trackChanges: form.trackChanges
+    trackChanges: form.trackChanges,
+    updatedAt: (form.trackChanges ? form.updatedAt : undefined)
   });
 
   // Assume update will fail
