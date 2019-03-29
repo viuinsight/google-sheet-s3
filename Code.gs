@@ -29,6 +29,16 @@ function onOpen() {
 }
 
 /**
+ * Returns an array containing the values from the top row of the data sheet.
+ *
+ * @return {string[]} array of column headers
+ */
+function getPopulatedColumnHeaders() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+}
+
+/**
  * Publish updated JSON to S3 if changes were made to the first sheet event
  * object passed if called from trigger.
  *
@@ -37,6 +47,9 @@ function onOpen() {
 function publish(event) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheetId = sheet.getId();
+  var props = PropertiesService.getDocumentProperties().getProperties();
+  var trackChanges = (props.trackChanges == "track");
+  var dateColumn = props.updatedAt;
 
   // do nothing if required configuration settings are not present
   if (!hasRequiredProps()) {
@@ -53,18 +66,24 @@ function publish(event) {
     return;
   }
 
+  // determine if last published date should be checked
+  var checkDate = (trackChanges && dateColumn !== undefined);
+
   // get cell values from the range that contains data (2D array)
   var rows = sheet
     .getDataRange()
     .getValues();
 
-  // filter out empty rows, then exclude columns that don't have a header (i.e.
-  // text in row 1)
+  // filter out empty rows and if tracking changes, filter to only those
+  // modified since last publish, then exclude columns that don't have a header
+  // (i.e. text in row 1)
+  var lastPublished = new Date(props.lastPublished);
   rows = rows
-    .filter(function(row) {
+    .filter(function(row, index) {
       return row.some(function(value) {
         return typeof value !== "string" || value.length;
-      });
+      }) && (index == 0 || !checkDate
+        || (checkDate && (new Date(row[dateColumn]) > lastPublished)));
     })
     .map(function(row) {
       return row.filter(function(value, index) {
@@ -93,13 +112,26 @@ function publish(event) {
     data: objs
   }
 
+  // add date of last publish if tracking changes
+  if (trackChanges) {
+    content["recordsSince"] = lastPublished;
+  }
+
   // upload to S3
   // https://github.com/viuinsight/google-apps-script-for-aws
-  var props = PropertiesService.getDocumentProperties().getProperties();
   try {
+    // build object key based on whether changes should be tracked or not
+    var objectKey = (props.path ? props.path + "/" : "") + sheetId
+      + (trackChanges
+        ? Utilities.formatDate(new Date(), "GMT", "-yyyy-MM-dd'T'HH-mm-ss-SSS")
+        : "")
+      + ".json";
     AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
-    AWS.S3.putObject(props.bucketName, [props.path, sheetId].join("/"), content, props.region);
-    Logger.log("Published Spreadsheet [" + sheetId + "]");
+    AWS.S3.putObject(props.bucketName, objectKey, content, props.region);
+    Logger.log("Published Spreadsheet to [" + objectKey + "]");
+    PropertiesService.getDocumentProperties().setProperties({
+      lastPublished: new Date()
+    });
   } catch (e) {
     Logger.log("Did not publish. Spreadsheet [" + sheetId
       + "] generated following AWS error.\n" + e.toString());
@@ -120,6 +152,8 @@ function showConfig() {
   template.path = props.path || "";
   template.awsAccessKeyId = props.awsAccessKeyId || "";
   template.awsSecretKey = props.awsSecretKey || "";
+  template.trackChanges = props.trackChanges || "";
+  template.updatedAt = props.updatedAt || "";
   ui.showModalDialog(template.evaluate(), "Amazon S3 Publish Configuration");
 }
 
@@ -131,13 +165,21 @@ function showConfig() {
 function updateConfig(form) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheetId = sheet.getId();
-  PropertiesService.getDocumentProperties().setProperties({
+  var newProps = {
     bucketName: form.bucketName,
     region: form.region,
     path: form.path,
     awsAccessKeyId: form.awsAccessKeyId,
-    awsSecretKey: form.awsSecretKey
-  });
+    awsSecretKey: form.awsSecretKey,
+    trackChanges: form.trackChanges
+  };
+  if (form.trackChanges) {
+    newProps["trackChanges"] = form.updatedAt;
+  } else {
+    newProps["lastPublished"] = undefined;
+    newProps["trackChanges"] = undefined;
+  }
+  PropertiesService.getDocumentProperties().setProperties(newProps);
 
   // Assume update will fail
   var title = "Configuration failed to update";
@@ -145,8 +187,8 @@ function updateConfig(form) {
   if (hasRequiredProps()) {
     title = "✓ Configuration updated";
     message = "Published spreadsheet will be accessible at: \nhttps://"
-      + form.bucketName + ".s3.amazonaws.com/" + form.path + "/"
-      + sheet.getId();
+      + form.bucketName + ".s3.amazonaws.com/" + form.path + "/" + sheet.getId()
+      + (form.trackChanges ? "-<yyyy-MM-dd>T<HH-mm-ss-SSS>" : "") + ".json";
     publish();
     // Create an onChange trigger programatically instead of manually because
     // manual triggers disappear for no reason. See:
@@ -166,7 +208,7 @@ function updateConfig(form) {
       }
 
       if (!triggerExists) {
-        ScriptApp.newTrigger(functionName)
+        ScriptApp.newTrigger(fnName)
           .forSpreadsheet(sheet)
           .onChange()
           .create();
