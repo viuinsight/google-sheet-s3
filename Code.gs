@@ -165,15 +165,21 @@ function showConfig() {
 function updateConfig(form) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheetId = sheet.getId();
-  PropertiesService.getDocumentProperties().setProperties({
+  var newProps = {
     bucketName: form.bucketName,
     region: form.region,
     path: form.path,
     awsAccessKeyId: form.awsAccessKeyId,
     awsSecretKey: form.awsSecretKey,
-    trackChanges: form.trackChanges,
-    updatedAt: (form.trackChanges ? form.updatedAt : undefined)
-  });
+    trackChanges: form.trackChanges
+  };
+  if (form.trackChanges) {
+    newProps["trackChanges"] = form.updatedAt;
+  } else {
+    newProps["lastPublished"] = undefined;
+    newProps["trackChanges"] = undefined;
+  }
+  PropertiesService.getDocumentProperties().setProperties(newProps);
 
   // Assume update will fail
   var title = "Configuration failed to update";
