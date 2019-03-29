@@ -98,10 +98,10 @@
         + (selectedIndex ? '' : ' selected="selected"')
         + '>Select column</option>'
       );
-      for (var i = 1; i <= headers.length; i++) {
+      for (var i = 0; i < headers.length; i++) {
         select.append(
           '<option value="' + i + '"' + (i == selectedIndex ? ' selected="selected"' : '')
-          + '>' + 'Column ' + columnToLetter(i) + ': ' + headers[i-1] + '</option>'
+          + '>' + 'Column ' + columnToLetter(i+1) + ': ' + headers[i] + '</option>'
         );
       }
       $('select').formSelect();

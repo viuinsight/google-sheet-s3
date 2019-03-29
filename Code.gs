@@ -47,6 +47,9 @@ function getPopulatedColumnHeaders() {
 function publish(event) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheetId = sheet.getId();
+  var props = PropertiesService.getDocumentProperties().getProperties();
+  var trackChanges = (props.trackChanges == "track");
+  var dateColumn = props.updatedAt;
 
   // do nothing if required configuration settings are not present
   if (!hasRequiredProps()) {
@@ -63,18 +66,24 @@ function publish(event) {
     return;
   }
 
+  // determine if last published date should be checked
+  var checkDate = (trackChanges && dateColumn !== undefined);
+
   // get cell values from the range that contains data (2D array)
   var rows = sheet
     .getDataRange()
     .getValues();
 
-  // filter out empty rows, then exclude columns that don't have a header (i.e.
-  // text in row 1)
+  // filter out empty rows and if tracking changes, filter to only those
+  // modified since last publish, then exclude columns that don't have a header
+  // (i.e. text in row 1)
+  var lastPublished = new Date(props.lastPublished);
   rows = rows
-    .filter(function(row) {
+    .filter(function(row, index) {
       return row.some(function(value) {
         return typeof value !== "string" || value.length;
-      });
+      }) && (index == 0 || !checkDate
+        || (checkDate && (new Date(row[dateColumn]) > lastPublished)));
     })
     .map(function(row) {
       return row.filter(function(value, index) {
@@ -103,19 +112,26 @@ function publish(event) {
     data: objs
   }
 
+  // add date of last publish if tracking changes
+  if (trackChanges) {
+    content["recordsSince"] = lastPublished;
+  }
+
   // upload to S3
   // https://github.com/viuinsight/google-apps-script-for-aws
-  var props = PropertiesService.getDocumentProperties().getProperties();
   try {
     // build object key based on whether changes should be tracked or not
     var objectKey = (props.path ? props.path + "/" : "") + sheetId
-      + (props.trackChanges
-          ? Utilities.formatDate(new Date(), "GMT", "-yyyy-MM-dd'T'HH-mm-ss-SSS")
-          : "")
+      + (trackChanges
+        ? Utilities.formatDate(new Date(), "GMT", "-yyyy-MM-dd'T'HH-mm-ss-SSS")
+        : "")
       + ".json";
     AWS.S3.init(props.awsAccessKeyId, props.awsSecretKey);
     AWS.S3.putObject(props.bucketName, objectKey, content, props.region);
     Logger.log("Published Spreadsheet to [" + objectKey + "]");
+    PropertiesService.getDocumentProperties().setProperties({
+      lastPublished: new Date()
+    });
   } catch (e) {
     Logger.log("Did not publish. Spreadsheet [" + sheetId
       + "] generated following AWS error.\n" + e.toString());
