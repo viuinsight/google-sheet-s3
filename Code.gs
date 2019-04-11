@@ -194,25 +194,23 @@ function updateConfig(form) {
     // manual triggers disappear for no reason. See:
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=4854
     // https://code.google.com/p/google-apps-script-issues/issues/detail?id=5831
-    // But only if such a trigger does not exist.
+    // Deleting previous copies with the same name for this spreadsheet first.
     try {
       var fnName = "publish";
-      var triggers = ScriptApp.getProjectTriggers();
-      var triggerExists = false;
 
+      var triggers = ScriptApp.getProjectTriggers();
       for (var i = 0; i < triggers.length; i++) {
-        if (triggers[i].getHandlerFunction() === fnName) {
-          triggerExists = true;
-          break;
+        var triggerFunction = triggers[i].getHandlerFunction();
+        var triggerSource = triggers[i].getTriggerSourceId();
+        if (triggerSource === sheetId && triggerFunction === fnName) {
+          ScriptApp.deleteTrigger(triggers[i]);
         }
       }
 
-      if (!triggerExists) {
-        ScriptApp.newTrigger(fnName)
-          .forSpreadsheet(sheet)
-          .onChange()
-          .create();
-      }
+      ScriptApp.newTrigger(fnName)
+        .forSpreadsheet(sheet)
+        .onChange()
+        .create();
     } catch (e) {
       message = "Could not register event listener.\n" + e.toString();
       Logger.log("Could not register onChange event for Spreadsheet [" + sheetId
